@@ -774,6 +774,7 @@ class WBXMLDefs {
                   0x16 => "POOMMAIL2", //14.0
                   0x17 => "Notes", //14.0
                   0x18 => "RightsManagement",
+	                0x19 => "Find", //16.1
               )
           );
 }
