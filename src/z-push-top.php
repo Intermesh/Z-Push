@@ -84,17 +84,17 @@ class ZPushTop {
 
     private $topCollector;
     private $starttime;
-    private $action;
-    private $filter;
-    private $status;
-    private $statusexpire;
-    private $wide;
+    private $action = "";
+    private $filter = false;
+    private $status = false;
+    private $statusexpire = 0;
+    private $wide = false;
     private $wasEnabled;
-    private $terminate;
-    private $scrSize;
+    private $terminate = false;
+    private $scrSize = array('width' => 80, 'height' => 24);
     private $pingInterval;
-    private $showPush;
-    private $showTermSec;
+    private $showPush = true;
+    private $showTermSec = self::SHOW_TERM_DEFAULT_TIME;
 
     private $linesActive = array();
     private $linesOpen = array();
@@ -106,8 +106,15 @@ class ZPushTop {
     private $activeUsers = array();
     private $activeDevices = array();
     private $activeBackend;
+	private ?int $currenttime ;
+	private int $helpexpire = 0;
+	/**
+	 * @var false
+	 */
+	private bool $doingTail = false;
+	private int $showOption = self::SHOW_DEFAULT;
 
-    /**
+	/**
      * Constructor
      *
      * @access public
@@ -115,21 +122,10 @@ class ZPushTop {
     public function __construct() {
         $this->starttime = time();
         $this->currenttime = time();
-        $this->action = "";
-        $this->filter = false;
-        $this->status = false;
-        $this->statusexpire = 0;
-        $this->helpexpire = 0;
-        $this->doingTail = false;
-        $this->wide = false;
-        $this->terminate = false;
-        $this->showPush = true;
-        $this->showOption = self::SHOW_DEFAULT;
-        $this->showTermSec = self::SHOW_TERM_DEFAULT_TIME;
-        $this->scrSize = array('width' => 80, 'height' => 24);
-        $this->pingInterval = (defined('PING_INTERVAL') && PING_INTERVAL > 0) ? PING_INTERVAL : 12;
+	    $this->pingInterval = (defined('PING_INTERVAL') && PING_INTERVAL > 0) ? PING_INTERVAL : 12;
 
-        // Identify the backend that will be loaded by z-push
+
+	    // Identify the backend that will be loaded by z-push
         $this->activeBackend = get_class(ZPush::GetBackend());
       
         // get a TopCollector
