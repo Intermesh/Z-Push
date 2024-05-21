@@ -189,30 +189,20 @@ class StateObject implements Serializable {
      * Method to serialize a StateObject
      *
      * @access public
-     * @return array
+     * @return string
      */
     public function serialize() {
-        // perform tasks just before serialization
-        $this->preSerialize();
-
-        return serialize(array($this->SO_internalid,$this->data));
+        return serialize($this->__serialize());
     }
 
     /**
      * Method to unserialize a StateObject
      *
      * @access public
-     * @return array
      * @throws StateInvalidException
      */
     public function unserialize($data) {
-        // throw a StateInvalidException if unserialize fails
-        ini_set('unserialize_callback_func', 'StateObject::ThrowStateInvalidException');
-
-        list($this->SO_internalid, $this->data) = unserialize($data);
-
-        // perform tasks just after unserialization
-        $this->postUnserialize();
+        $this->__unserialize(unserialize($data));
         return true;
     }
 
@@ -248,4 +238,23 @@ class StateObject implements Serializable {
     public static function ThrowStateInvalidException() {
         throw new StateInvalidException("Unserialization failed as class was not found or not compatible");
     }
+
+	public function __serialize(): array
+	{
+		// perform tasks just before serialization
+		$this->preSerialize();
+
+		return array($this->SO_internalid,$this->data);
+	}
+
+	public function __unserialize(array $data): void
+	{
+		// throw a StateInvalidException if unserialize fails
+		ini_set('unserialize_callback_func', 'StateObject::ThrowStateInvalidException');
+
+		list($this->SO_internalid, $this->data) = $data;
+
+		// perform tasks just after unserialization
+		$this->postUnserialize();
+	}
 }
