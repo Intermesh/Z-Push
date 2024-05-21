@@ -45,6 +45,8 @@ class ZPush {
     const ASV_121 = "12.1";
     const ASV_14 = "14.0";
     const ASV_141 = "14.1";
+    const ASV_16 = "16.0";
+    const ASV_161 = "16.1";
 
 		const ASV_161 = "16.1";
 
@@ -70,6 +72,7 @@ class ZPush {
     const COMMAND_PROVISION = 20;
     const COMMAND_RESOLVERECIPIENTS = 21;
     const COMMAND_VALIDATECERT = 22;
+    const COMMAND_FIND = 23;
 
 	const COMMAND_FIND = 23;
 
@@ -101,7 +104,9 @@ class ZPush {
                     self::ASV_12,
                     self::ASV_121,
                     self::ASV_14,
-                    self::ASV_141
+                    self::ASV_141,
+                    self::ASV_16,
+                    self::ASV_161
                 );
 
     static private $supportedCommands = array(
@@ -131,6 +136,7 @@ class ZPush {
                     self::COMMAND_NOTIFY            => array(self::ASV_1,  self::REQUESTHANDLER => "Notify"),                                           // deprecated & not implemented
                     self::COMMAND_ITEMOPERATIONS    => array(self::ASV_12, self::REQUESTHANDLER => "ItemOperations"),
                     self::COMMAND_SETTINGS          => array(self::ASV_12, self::REQUESTHANDLER => "Settings"),
+                    self::COMMAND_FIND          => array(self::ASV_161, self::REQUESTHANDLER => "Find"),
 
                     self::COMMAND_WEBSERVICE_DEVICE => array(self::REQUESTHANDLER => "Webservice", self::PLAININPUT, self::NOACTIVESYNCCOMMAND, self::WEBSERVICECOMMAND),
                     self::COMMAND_WEBSERVICE_USERS  => array(self::REQUESTHANDLER => "Webservice", self::PLAININPUT, self::NOACTIVESYNCCOMMAND, self::WEBSERVICECOMMAND),
@@ -831,9 +837,9 @@ class ZPush {
         <br><br>
         More information about Z-Push can be found at:<br>
         <a href="http://z-push.org/">Z-Push homepage</a><br>
-        <a href="http://z-push.org/download">Z-Push download page</a><br>
-        <a href="https://jira.z-hub.io/browse/ZP">Z-Push Bugtracker</a><br>
-        <a href="https://wiki.z-hub.io/display/ZP">Z-Push Wiki</a> and <a href="https://wiki.z-hub.io/display/ZP/Roadmap">Roadmap</a><br>
+        <a href="https://z-push.org/download/">Z-Push download page</a><br>
+        <a href="https://github.com/Z-Hub/Z-Push/issues">Z-Push Bugtracker</a><br>
+        <a href="https://github.com/Z-Hub/Z-Push/wiki">Z-Push Wiki</a> and <a href="https://github.com/Z-Hub/Z-Push/wiki/Roadmap">Roadmap</a><br>
         <br>
         All modifications to this sourcecode must be published and returned to the community.<br>
         Please see <a href="http://www.gnu.org/licenses/agpl-3.0.html">AGPLv3 License</a> for details.<br>
