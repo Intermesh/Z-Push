@@ -48,8 +48,6 @@ class ZPush {
     const ASV_16 = "16.0";
     const ASV_161 = "16.1";
 
-		const ASV_161 = "16.1";
-
     /**
      * Command codes for base64 encoded requests (AS >= 12.1)
      */
@@ -73,8 +71,6 @@ class ZPush {
     const COMMAND_RESOLVERECIPIENTS = 21;
     const COMMAND_VALIDATECERT = 22;
     const COMMAND_FIND = 23;
-
-	const COMMAND_FIND = 23;
 
     // Deprecated commands
     const COMMAND_GETHIERARCHY = -1;
