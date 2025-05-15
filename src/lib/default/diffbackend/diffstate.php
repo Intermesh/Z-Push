@@ -186,6 +186,16 @@ class DiffState implements IChanges {
                     $change["type"] = "change";
                     $changes[] = $change;
                 }
+                elseif(isset($old_item["draft"], $item["draft"]) && $old_item["draft"] != $item["draft"]) {
+                    // 'draft' changed
+                    $change["type"] = "change";
+                    $changes[] = $change;
+                }
+                elseif(!isset($old_item["draft"]) && isset($item["draft"]) && $item["draft"] === 1) {
+                    // AS16 migration 'draft' changed
+                    $change["type"] = "change";
+                    $changes[] = $change;
+                }                
                 elseif(isset($old_item['mod'], $item['mod']) && $old_item['mod'] != $item['mod']) {
                     // message modified
                     $change["type"] = "change";
@@ -227,7 +237,7 @@ class DiffState implements IChanges {
     protected function updateState($type, $change) {
         // Change can be a change or an add
         if($type == "change") {
-            for($i=0; $i < count($this->syncstate); $i++) {
+            for($i=0; $i < count((array)$this->syncstate); $i++) {
                 if($this->syncstate[$i]["id"] == $change["id"]) {
                     $this->syncstate[$i] = $change;
                     return;
@@ -236,7 +246,7 @@ class DiffState implements IChanges {
             // Not found, add as new
             $this->syncstate[] = $change;
         } else {
-            for($i=0; $i < count($this->syncstate); $i++) {
+            for($i=0; $i < count((array)$this->syncstate); $i++) {
                 // Search for the entry for this item
                 if($this->syncstate[$i]["id"] == $change["id"]) {
                     if($type == "flags") {

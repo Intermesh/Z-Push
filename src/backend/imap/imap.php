@@ -265,6 +265,9 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
 
         $this->setReturnPathValue($message->headers, $fromaddr);
 
+        if (defined('IMAP_RECEIVED') && IMAP_RECEIVED)
+            $message->headers["received"] = "from " . Request::GetRemoteAddr() . " by " . gethostname() . " (Z-Push); " . $message->headers["date"];
+
         $finalBody = "";
         $finalHeaders = array();
 
@@ -1109,6 +1112,16 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                     $message["star"] = 0;
                 }
 
+                // 'draft'
+                $isdraftfolder = ($this->GetFolder($this->getFolderIdFromImapId($folderid))->type === SYNC_FOLDER_TYPE_DRAFTS);
+
+                if ((isset($overview->draft) && $overview->draft) || $isdraftfolder) {
+                    $message["draft"] = 1;
+                }
+                else {
+                    $message["draft"] = 0;
+                }
+
                 $messages[] = $message;
             }
         }
@@ -1359,6 +1372,14 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                         $output->lastverbexecuted = SYNC_MAIL_LASTVERB_UNKNOWN;
                     }
                 }
+                
+                if (Request::GetProtocolVersion() >= 16.0) {
+
+                    //set so message is fully exported
+                    if (isset($stat["draft"]) && $stat["draft"]) {
+                        $output->isdraft = true;
+                    }
+                }                
             }
 
             $Mail_RFC822 = new Mail_RFC822();
@@ -1617,6 +1638,16 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         }
         else {
             $entry["star"] = 0;
+        }
+
+        // 'draft'
+        $isdraftfolder = ($this->GetFolder($folderid)->type === SYNC_FOLDER_TYPE_DRAFTS);
+
+        if ((isset($overview->draft) && $overview->draft) || $isdraftfolder) {
+            $entry["draft"] = 1;
+        }
+        else {
+            $entry["draft"] = 0;
         }
 
         return $entry;
@@ -1959,7 +1990,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
      * @return string       AS version constant
      */
     public function GetSupportedASVersion() {
-        return ZPush::ASV_14;
+        return ZPush::ASV_161;
     }
 
 
@@ -2018,12 +2049,36 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
     public function GetMailboxSearchResults($cpo, $prefix = '') {
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMailboxSearchResults()"));
 
-        $searchFolderId = $cpo->GetSearchFolderid();
-        $searchRange = explode('-', $cpo->GetSearchRange());
-        $filter = $this->getSearchRestriction($cpo);
+        $recursive = false;
 
         // Open the folder to search
         $search = true;
+
+        if ($cpo->GetFindSearchId()) {
+            Zlog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMailboxSearchResults(): Do FIND"));
+            $searchRange = explode('-', $cpo->GetFindRange());
+
+            $filter = $this->getFindRestriction($cpo);
+            $searchFolderId = $cpo->GetFindFolderId();
+            $range = $cpo->GetFindRange();
+
+            // if subfolders are required, do a recursive search
+            if ($cpo->GetFindDeepTraversal()) {
+                $recursive = true;
+            }
+        }
+        else {
+            Zlog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMailboxSearchResults(): Do SEARCH"));
+            $filter = $this->getSearchRestriction($cpo);
+            $searchRange = explode('-', $cpo->GetSearchRange());
+            $searchFolderId = $cpo->GetSearchFolderid();
+            $range = $cpo->GetSearchRange();
+
+            // if subfolders are required, do a recursive search
+            if ($cpo->GetSearchDeepTraversal()) {
+                $recursive = true;
+            }
+        }
 
         if (empty($searchFolderId)) {
             $searchFolderId = $this->getFolderIdFromImapId($this->create_name_folder(IMAP_FOLDER_INBOX), false);
@@ -2037,7 +2092,7 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $numMessages = 0;
         ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMailboxSearchResults: Filter <%s>", $filter));
 
-        if ($cpo->GetSearchDeepTraversal()) { // Recursive search
+        if ($recursive) { // Recursive search
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMailboxSearchResults: Recursive search %s", $imapId));
             $listFolders = @imap_list($this->mbox, $this->server, "*");
             if ($listFolders === false) {
@@ -2103,11 +2158,12 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
                 $items[$j]['class'] = 'Email';
                 $items[$j]['longid'] = $prefix . $foundFolderId . ":" . $listMessages[$p][$foundFolderId][$pc];
                 $items[$j]['folderid'] = $prefix . $foundFolderId;
+                $items[$j]['serverid'] = $listMessages[$p][$foundFolderId][$pc];
                 $pc++;
             }
         }
         else {
-            $items['range'] = $cpo->GetSearchRange();
+            $items['range'] = $range;
             $items['searchtotal'] = 0;
 
             ZLog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->GetMailboxSearchResults: No messages found!"));
@@ -2195,6 +2251,42 @@ class BackendIMAP extends BackendDiff implements ISearchProvider {
         $filter .= ' TEXT "' . $searchText . '"';
 
         return $filter;
+    }
+
+
+    /**
+     * Creates a FIND restriction.
+     *
+     * @param ContentParameter $cpo
+     *
+     * @return array
+     */
+    private function getFindRestriction($cpo) {
+        $findText = $cpo->GetFindFreeText();
+
+        $findFor = "";
+        if (!(stripos($findText, ":") && (stripos($findText, "OR") || stripos($findText, "AND")))) {
+            $findFor = $findText;
+        }
+        else {
+            // just extract a list of words we search for ignoring the fields to be searched in
+            // this list of words is then passed to getSearchRestriction()
+            $words = [];
+            foreach (explode(" OR ", $findText) as $search) {
+                if (stripos($search, ':')) {
+                    $value = explode(":", $search)[1];
+                }
+                else {
+                    $value = $search;
+                }
+                $words[str_replace('"', '', $value)] = true;
+            }
+            $findFor = implode(" ", array_keys($words));
+        }
+        Zlog::Write(LOGLEVEL_DEBUG, sprintf("BackendIMAP->getFindRestriction(): extracted words: %s", $findFor));
+        $cpo->SetSearchFreeText($findFor);
+
+        return $this->getSearchRestriction($cpo);
     }
 
 

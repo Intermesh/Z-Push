@@ -73,6 +73,11 @@ class SyncMail extends SyncObject {
     public $rightsManagementLicense;
     public $asbodypart;
 
+    // AS 16.0 props
+    public $isdraft;
+    public $bcc;
+    public $send;
+
     // AS 16.0 hidden properties for FIND Command
     public $Displaycc;
     public $Displaybcc;
@@ -162,7 +167,9 @@ class SyncMail extends SyncObject {
 
             $mapping[SYNC_AIRSYNCBASE_ATTACHMENTS]                      = array (   self::STREAMER_VAR      => "asattachments",
                                                                                     self::STREAMER_TYPE     => "SyncBaseAttachment",
-                                                                                    self::STREAMER_ARRAY    => SYNC_AIRSYNCBASE_ATTACHMENT);
+                                                                                    self::STREAMER_ARRAY    => array(  SYNC_AIRSYNCBASE_ATTACHMENT => "SyncBaseAttachment", 
+                                                                                                                       SYNC_AIRSYNCBASE_ADD => "SyncBaseAttachmentAdd",
+                                                                                                                       SYNC_AIRSYNCBASE_DELETE => "SyncBaseAttachmentDelete") );
 
             $mapping[SYNC_POOMMAIL_CONTENTCLASS]                        = array (   self::STREAMER_VAR      => "contentclass",
                                                                                     self::STREAMER_CHECKS   => array(   self::STREAMER_CHECK_ONEVALUEOF     => array(DEFAULT_EMAIL_CONTENTCLASS, DEFAULT_CALENDAR_CONTENTCLASS) ));
@@ -224,4 +231,8 @@ class SyncMail extends SyncObject {
 
         parent::__construct($mapping);
     }
+}
+
+class SyncMailResponse extends SyncMail {
+    use ResponseTrait;
 }
