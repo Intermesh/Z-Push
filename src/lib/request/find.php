@@ -175,8 +175,9 @@ class Find extends RequestProcessor {
             if ($searchtotal > 0) {
                 foreach ($rows as $u) {
                     // fetch the SyncObject for this result
-                    $message = self::$backend->Fetch(false, $u['longid'], $cpo);
-                    $mfolderid = self::$deviceManager->GetFolderIdForBackendId(bin2hex($message->ParentSourceKey));
+										list($longfolderid, $uid) = Utils::SplitMessageId($u['longid']);
+										$folderid = self::$deviceManager->GetFolderIdForBackendId($u['folderid']);
+                    $message = self::$backend->Fetch($folderid, $uid, $cpo);
 
                     self::$encoder->startTag(SYNC_FIND_RESULT);
                     self::$encoder->startTag(SYNC_FOLDERTYPE);
@@ -184,7 +185,7 @@ class Find extends RequestProcessor {
                     self::$encoder->endTag();
 
                     self::$encoder->startTag(SYNC_SERVERENTRYID);
-                    self::$encoder->content($mfolderid . ":" . $u['serverid']);
+                    self::$encoder->content($folderid . ":" . $u['serverid']);
                     self::$encoder->endTag();
                     self::$encoder->startTag(SYNC_FOLDERID);
                     self::$encoder->content($cpo->GetRawFindFolderId());
