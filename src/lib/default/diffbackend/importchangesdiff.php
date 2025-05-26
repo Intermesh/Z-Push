@@ -97,7 +97,7 @@ class ImportChangesDiff extends DiffState implements IImportChanges {
         // Record the state of the message
         $this->updateState("change", $stat);
 
-        return $stat["id"];
+        return (object) ['serverid' => $stat["id"]];
     }
 
     /**
