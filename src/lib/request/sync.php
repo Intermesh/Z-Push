@@ -556,7 +556,7 @@ class Sync extends RequestProcessor {
                             if ($instanceid) {
                                 // for delete actions we don't have an ASObject
                                 if (!$message) {
-                                    $message = GSync::getSyncObjectFromFolderClass($spa->GetContentClass());
+                                    $message = ZPush::getSyncObjectFromFolderClass($spa->GetContentClass());
                                     $message->Decode(self::$decoder);
                                 }
                                 $message->instanceid = $instanceid;
